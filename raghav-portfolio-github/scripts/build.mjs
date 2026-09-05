@@ -1,0 +1,12 @@
+import { build } from 'vite';
+import { readFile,writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+await build({configFile:resolve('vite.config.ts')});
+await build({configFile:resolve('vite.config.ts'),build:{ssr:resolve('src/entry-server.tsx'),outDir:'.prerender',emptyOutDir:true}});
+const {render}=await import(pathToFileURL(resolve('.prerender/entry-server.js')).href);
+const file=resolve('dist/index.html');
+const html=await readFile(file,'utf8');
+if(!html.includes('<!--app-html-->'))throw new Error('Missing prerender placeholder');
+await writeFile(file,html.replace('<!--app-html-->',render()));
+console.log('Static portfolio generated: dist/index.html');
